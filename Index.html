@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF Premium Cloth Changer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto; background: #0a0c15; color: #eef2ff; padding: 20px; padding-bottom: 90px; }
+        .container { max-width: 1300px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2rem; background: linear-gradient(135deg, #fff, #ffcc00); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .card { background: rgba(18, 22, 40, 0.95); backdrop-filter: blur(12px); border-radius: 32px; padding: 24px; margin-bottom: 24px; border: 1px solid rgba(255,204,0,0.2); }
+        .flex-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+        .flex-group { flex: 1; min-width: 180px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #ffcc00; font-size: 0.85rem; }
+        select, input { width: 100%; padding: 12px 16px; background: #0c0f1c; border: 1px solid #2a2f45; border-radius: 24px; color: white; font-size: 0.9rem; }
+        select:focus, input:focus { outline: none; border-color: #ffcc00; }
+        button { background: linear-gradient(90deg, #ffcc00, #ff9900); border: none; padding: 12px 20px; font-weight: bold; border-radius: 40px; cursor: pointer; color: #0a0e1a; }
+        .btn-block { width: 100%; margin-top: 15px; }
+        .char-buttons { display: flex; gap: 15px; margin: 20px 0; }
+        .char-btn { flex: 1; background: #1e253f; color: white; border: 1px solid #ffcc00; }
+        .char-btn.active { background: #ffcc00; color: #0a0e1a; }
+        .category { margin-bottom: 30px; }
+        .category h2 { font-size: 1.3rem; border-left: 4px solid #ffcc00; padding-left: 12px; margin-bottom: 15px; }
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+        .item-card { background: #12172e; border-radius: 20px; padding: 12px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .item-card.selected { border-color: #ffcc00; background: #1e2a4a; }
+        .item-card img { width: 80px; height: 80px; object-fit: contain; background: #0a0e1a; padding: 5px; border-radius: 12px; }
+        .item-name { font-size: 0.8rem; font-weight: 600; margin-top: 8px; }
+        .item-id { font-size: 0.6rem; color: #8892b0; }
+        .slot-badge { display: inline-block; margin-top: 6px; font-size: 0.65rem; background: #ffcc0022; padding: 2px 8px; border-radius: 20px; color: #ffcc00; }
+        .unavailable { background: #2a1a1a; border-color: #aa3333; opacity: 0.8; }
+        .unavailable .slot-badge { background: #aa3333; color: white; }
+        .show-more-btn { background: #2a2f45; color: #ffcc00; margin-top: 15px; padding: 8px 16px; font-size: 0.8rem; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a2e; padding: 12px 24px; border-radius: 40px; z-index: 1000; border-left: 4px solid #ffcc00; }
+        .error { background: #331111; border-left-color: #ff4444; }
+        .success { background: #113311; border-left-color: #44ff44; }
+        .apply-outfit { position: fixed; bottom: 20px; left: 20px; right: 20px; background: linear-gradient(90deg, #2e7d32, #1b5e20); padding: 14px; font-size: 1.1rem; border-radius: 60px; color: white; font-weight: bold; z-index: 100; }
+        .search-bar { margin: 20px 0 10px; }
+        .search-bar input { border-radius: 40px; }
+        .stat { background: #0c0f1c; padding: 8px 15px; border-radius: 24px; display: inline-block; margin-right: 12px; font-size: 0.8rem; }
+        .logout-btn { background: #333; padding: 8px 16px; }
+        .warning-msg { color: #ffaa00; text-align: center; margin: 20px 0; }
+        @media (max-width: 600px) { .items-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } .item-card img { width: 65px; height: 65px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>✨ FF Premium Cloth Changer</h1>
+        <p>🔥 Change Your Cloths Instantly 🔥</p>
+    </div>
+
+    {% if not logged_in %}
+    <div class="card">
+        <form method="post" action="/login">
+            <div class="flex-row">
+                <div class="flex-group">
+                    <label>🔐 Authentication Method</label>
+                    <select name="auth_method" id="auth_method">
+                        <option value="uidpwd">📱 UID + Password</option>
+                        <option value="jwt">🔑 JWT Token</option>
+                        <option value="access">🎫 Access Token</option>
+                        <option value="eat">🍽️ EAT Token</option>
+                    </select>
+                </div>
+            </div>
+            <div id="uid_group">
+                <div class="flex-row">
+                    <div class="flex-group"><label>UID</label><input type="text" name="uid" placeholder="Your UID"></div>
+                    <div class="flex-group"><label>Password</label><input type="password" name="password" placeholder="Password"></div>
+                </div>
+            </div>
+            <div id="jwt_group" style="display:none;"><input type="text" name="jwt" class="btn-block" placeholder="Paste JWT token"></div>
+            <div id="access_group" style="display:none;"><input type="text" name="access_token" class="btn-block" placeholder="Paste Access Token"></div>
+            <div id="eat_group" style="display:none;"><input type="text" name="eat_token" class="btn-block" placeholder="Paste EAT Token"></div>
+            <button type="submit" class="btn-block">🔓 Connect & Load Vault</button>
+        </form>
+        {% if error %}
+        <div style="color:#ff8888; margin-top:12px; text-align:center;">{{ error }}</div>
+        {% endif %}
+    </div>
+    <script>
+        const authSelect = document.getElementById('auth_method');
+        const uidGroup = document.getElementById('uid_group');
+        const jwtGroup = document.getElementById('jwt_group');
+        const accessGroup = document.getElementById('access_group');
+        const eatGroup = document.getElementById('eat_group');
+        function updateAuthFields() {
+            const method = authSelect.value;
+            uidGroup.style.display = method === 'uidpwd' ? 'block' : 'none';
+            jwtGroup.style.display = method === 'jwt' ? 'block' : 'none';
+            accessGroup.style.display = method === 'access' ? 'block' : 'none';
+            eatGroup.style.display = method === 'eat' ? 'block' : 'none';
+        }
+        authSelect.addEventListener('change', updateAuthFields);
+        updateAuthFields();
+    </script>
+    {% else %}
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div class="stat">🌍 Detected Region: {{ region }}</div>
+            <a href="/logout"><button class="logout-btn">🚪 Logout</button></a>
+        </div>
+
+        {% if not char_selected %}
+        <div class="warning-msg">⚠️ Please select a character (Male/Female) to see your items.</div>
+        {% endif %}
+
+        <div class="char-buttons">
+            <button class="char-btn" data-char="male">♂️ MALE</button>
+            <button class="char-btn" data-char="female">♀️ FEMALE</button>
+        </div>
+
+        {% if char_selected %}
+        <div id="items-container">
+            {% for cat_name, items in categories.items() %}
+                {% if items %}
+                <div class="category" data-category="{{ cat_name }}">
+                    <h2>{{ cat_name|upper }}</h2>
+                    <div class="items-grid" id="grid-{{ cat_name }}"></div>
+                    {% if items|length > 10 %}
+                    <button class="show-more-btn" data-category="{{ cat_name }}">Show More ({{ items|length - 10 }} left)</button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <button id="applyOutfitBtn" class="apply-outfit">✨ APPLY OUTFIT (HEAD/FACE/TOP) ✨</button>
+        {% endif %}
+    </div>
+
+    <script>
+        const categoriesData = {{ categories|tojson }};
+        let selectedClothes = { head: null, face: null, top: null };
+        let visibleCount = { head: 10, mask: 10, face: 10, top: 10, bottom: 10, shoe: 10 };
+
+        function showToast(msg, type='info') {
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.className = 'toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.className = `toast ${type}`;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 5000);
+        }
+
+        function renderCategory(catName, items) {
+            const container = document.getElementById(`grid-${catName}`);
+            if (!container) return;
+            const limit = visibleCount[catName];
+            const itemsToShow = items.slice(0, limit);
+            let html = '';
+            for (const item of itemsToShow) {
+                let slotType = '';
+                let isAvailable = false;
+                const type = (item.type || '').toLowerCase();
+                if (type === 'head') { slotType = 'head'; isAvailable = true; }
+                else if (type === 'facepaint' || type === 'face') { slotType = 'face'; isAvailable = true; }
+                else if (type === 'top' || type === 'shirt' || type === 'clothes') { slotType = 'top'; isAvailable = true; }
+                else if (type === 'mask') { slotType = 'mask'; isAvailable = false; }
+                else if (type === 'bottom' || type === 'pants') { slotType = 'bottom'; isAvailable = false; }
+                else if (type === 'shoe' || type === 'footwear') { slotType = 'shoe'; isAvailable = false; }
+                else { slotType = 'other'; isAvailable = false; }
+                const selectedClass = (slotType === 'head' && selectedClothes.head === item.id) ||
+                                     (slotType === 'face' && selectedClothes.face === item.id) ||
+                                     (slotType === 'top' && selectedClothes.top === item.id) ? 'selected' : '';
+                const unavailableClass = !isAvailable ? 'unavailable' : '';
+                const badgeText = slotType === 'head' ? 'HEAD' : (slotType === 'face' ? 'FACE' : (slotType === 'top' ? 'TOP' : slotType.toUpperCase()));
+                html += `<div class="item-card ${selectedClass} ${unavailableClass}" data-id="${item.id}" data-slot="${slotType}" data-available="${isAvailable}">
+                            <img src="https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${item.id}.png" onerror="this.src='https://via.placeholder.com/80?text=?'">
+                            <div class="item-name">${escapeHtml(item.name)}</div>
+                            <div class="item-id">ID: ${item.id}</div>
+                            <div class="slot-badge">${badgeText}</div>
+                        </div>`;
+            }
+            container.innerHTML = html;
+            container.querySelectorAll('.item-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const available = card.dataset.available === 'true';
+                    const slot = card.dataset.slot;
+                    const id = parseInt(card.dataset.id);
+                    if (!available) {
+                        showToast(`❌ ${slot.toUpperCase()} items cannot be changed (Currently Unavailable)`, 'error');
+                        return;
+                    }
+                    if (slot === 'head') selectedClothes.head = (selectedClothes.head === id ? null : id);
+                    else if (slot === 'face') selectedClothes.face = (selectedClothes.face === id ? null : id);
+                    else if (slot === 'top') selectedClothes.top = (selectedClothes.top === id ? null : id);
+                    for (const [cat, its] of Object.entries(categoriesData)) {
+                        renderCategory(cat, its);
+                    }
+                    const total = (selectedClothes.head ? 1:0)+(selectedClothes.face?1:0)+(selectedClothes.top?1:0);
+                    showToast(`📌 Selected: ${total} items (Head/Face/Top)`, 'info');
+                });
+            });
+        }
+
+        function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+
+        function renderAllCategories() {
+            for (const [catName, items] of Object.entries(categoriesData)) {
+                if (items && items.length) {
+                    renderCategory(catName, items);
+                }
+            }
+        }
+
+        document.querySelectorAll('.show-more-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const cat = btn.dataset.category;
+                if (cat && categoriesData[cat]) {
+                    visibleCount[cat] = categoriesData[cat].length;
+                    renderCategory(cat, categoriesData[cat]);
+                    btn.style.display = 'none';
+                }
+            });
+        });
+
+        async function changeCharacter(type) {
+            const charId = type === 'male' ? 102000007 : 101000006;
+            showToast(`⏳ Changing to ${type.toUpperCase()}...`, 'info');
+            try {
+                const resp = await fetch('/change_character', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({character_id: charId})
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast(`✅ Character changed to ${type.toUpperCase()}`, 'success');
+                    location.reload();
+                } else {
+                    showToast(`❌ Failed: ${data.error}`, 'error');
+                }
+            } catch(e) { showToast(`Network error: ${e.message}`, 'error'); }
+        }
+
+        async function applyOutfit() {
+            const clothes = {};
+            if (selectedClothes.head) clothes[25500000] = selectedClothes.head;
+            if (selectedClothes.face) clothes[25625000] = selectedClothes.face;
+            if (selectedClothes.top) clothes[26000000] = selectedClothes.top;
+            if (Object.keys(clothes).length === 0) {
+                showToast('❌ No head/face/top selected!', 'error');
+                return;
+            }
+            showToast('✨ Applying outfit...', 'info');
+            try {
+                const resp = await fetch('/change_clothes', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({clothes})
+                });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    showToast(`❌ Server error (${resp.status}): ${text.substring(0, 100)}`, 'error');
+                    return;
+                }
+                const data = await resp.json();
+                if (data.success) showToast('✅ Outfit changed successfully!', 'success');
+                else showToast(`❌ Failed: ${data.error}`, 'error');
+            } catch(e) { showToast(`Network error: ${e.message}`, 'error'); }
+        }
+
+        document.querySelectorAll('.char-btn').forEach(btn => {
+            btn.addEventListener('click', () => changeCharacter(btn.dataset.char));
+        });
+        const applyBtn = document.getElementById('applyOutfitBtn');
+        if (applyBtn) applyBtn.addEventListener('click', applyOutfit);
+
+        {% if char_selected %}
+        renderAllCategories();
+        {% endif %}
+    </script>
+    {% endif %}
+</div>
+</body>
+</html>
